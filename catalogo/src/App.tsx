@@ -1,3 +1,4 @@
+
 import {
   useCallback,
   useEffect,
@@ -5,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+
 import { motion } from "motion/react";
 
 import Header from "./components/Header";
@@ -15,21 +17,21 @@ import Contato from "./pages/Contato";
 import Admin from "./pages/Admin";
 import ProductModal from "./components/ProductModal";
 
-import { products as initialProducts } from "./data/products";
+import {
+  deleteProduct,
+  getProducts,
+  saveProduct,
+} from "./services/products";
 
 type Page = "inicio" | "sobre" | "contato";
 
-const STORAGE_KEY = "catalogo-produtos-v1";
 const MODAL_EXIT_DURATION = 400;
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.12,
-      delayChildren: 0.15,
-    },
+    transition: { staggerChildren: 0.12, delayChildren: 0.15 },
   },
 };
 
@@ -38,79 +40,85 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: {
-      duration: 0.55,
-      ease: "easeOut" as const,
-    },
+    transition: { duration: 0.55, ease: "easeOut" as const },
   },
 };
 
-function loadProducts(): Product[] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-
-    if (stored) {
-      const parsed: unknown = JSON.parse(stored);
-
-      if (Array.isArray(parsed)) {
-        return parsed as Product[];
-      }
-    }
-  } catch (error) {
-    console.error(
-      "Não foi possível carregar os produtos:",
-      error
-    );
-  }
-
-  return initialProducts;
+function normalize(text: string) {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
 function App() {
-  const [currentPage, setCurrentPage] =
-    useState<Page>("inicio");
-
-  const [selectedCategory, setSelectedCategory] =
-    useState("Todas");
-
+  const [currentPage, setCurrentPage] = useState<Page>("inicio");
+  const [selectedCategory, setSelectedCategory] = useState("Todas");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] =
     useState<Product | null>(null);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
-  const [isProductModalOpen, setIsProductModalOpen] =
-    useState(false);
-
-  const closeTimerRef =
-    useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [isAdmin, setIsAdmin] = useState(
-    () =>
-      window.location.pathname.replace(/\/+$/, "") ===
-      "/admin"
+    () => window.location.pathname.replace(/\/+$/, "") === "/admin"
   );
 
-  const [products, setProducts] =
-    useState<Product[]>(loadProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [productsError, setProductsError] = useState<string | null>(null);
+  const [savingProduct, setSavingProduct] = useState(false);
 
-  // Detecta navegação pelo histórico do navegador.
+  // Carrega os produtos do Supabase.
+  const reloadProducts = useCallback(async () => {
+    try {
+      const rows = await getProducts();
+
+      setProducts(rows);
+      setProductsError(null);
+    } catch (error) {
+      console.error(
+        "Não foi possível carregar os produtos do Supabase:",
+        error
+      );
+
+      setProductsError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível carregar os produtos."
+      );
+    } finally {
+      setLoadingProducts(false);
+    }
+  }, []);
+
+// Carregamento inicial do catálogo.
+useEffect(() => {
+  const timeoutId = setTimeout(() => {
+    void reloadProducts();
+  }, 0);
+
+  return () => clearTimeout(timeoutId);
+}, [reloadProducts]);
+
+  // Atualiza a página quando o usuário navega pelo histórico do navegador.
   useEffect(() => {
     function handlePopState() {
       setIsAdmin(
-        window.location.pathname.replace(/\/+$/, "") ===
-          "/admin"
+        window.location.pathname.replace(/\/+$/, "") === "/admin"
       );
     }
 
     window.addEventListener("popstate", handlePopState);
 
     return () => {
-      window.removeEventListener(
-        "popstate",
-        handlePopState
-      );
+      window.removeEventListener("popstate", handlePopState);
     };
   }, []);
 
-  // Limpa o temporizador ao desmontar o App.
+  // Limpa o temporizador ao desmontar o componente.
   useEffect(() => {
     return () => {
       if (closeTimerRef.current !== null) {
@@ -119,116 +127,125 @@ function App() {
     };
   }, []);
 
-  // Categorias disponíveis.
   const categories = useMemo(
     () =>
-      [
-        ...new Set(
-          products.map((product) => product.category)
-        ),
-      ].sort(),
+      [...new Set(products.map((product) => product.category))].sort(),
     [products]
   );
 
-  // Produtos filtrados pela categoria selecionada.
-  const filteredProducts = useMemo(
-    () =>
-      products.filter(
-        (product) =>
-          selectedCategory === "Todas" ||
-          product.category === selectedCategory
-      ),
-    [products, selectedCategory]
-  );
+  const filteredProducts = useMemo(() => {
+    const query = normalize(searchQuery);
 
-  // Salva os produtos no estado e no armazenamento local.
-  function persistProducts(nextProducts: Product[]) {
-    setProducts(nextProducts);
+    return products.filter(
+      (product) =>
+        (selectedCategory === "Todas" ||
+          product.category === selectedCategory) &&
+        normalize(
+          `${product.name} ${product.category} ${product.badge ?? ""}`
+        ).includes(query)
+    );
+  }, [products, selectedCategory, searchQuery]);
+
+  // Salva o produto no Supabase e atualiza a tela após o sucesso.
+  async function handleSaveProduct(product: Product) {
+    if (savingProduct) return;
+
+    setSavingProduct(true);
 
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(nextProducts)
-      );
+      const saved = await saveProduct(product);
+
+      setProducts((current) => {
+        const exists = current.some((item) => item.id === saved.id);
+
+        return exists
+          ? current.map((item) => (item.id === saved.id ? saved : item))
+          : [...current, saved];
+      });
+
+      setProductsError(null);
     } catch (error) {
-      console.error(
-        "Não foi possível salvar os produtos:",
-        error
-      );
+      console.error("Não foi possível salvar o produto:", error);
 
       window.alert(
-        "Não foi possível salvar os produtos neste navegador. Verifique o espaço disponível."
+        error instanceof Error
+          ? `Não foi possível salvar o produto: ${error.message}`
+          : "Não foi possível salvar o produto no Supabase."
       );
+
+      throw error;
+    } finally {
+      setSavingProduct(false);
     }
   }
 
-  // Cria ou atualiza um produto.
-  function handleSaveProduct(product: Product) {
-    const exists = products.some(
-      (item) => item.id === product.id
-    );
+  // Exclui o produto do Supabase e atualiza a lista.
+  async function handleDeleteProduct(id: string) {
+    try {
+      await deleteProduct(id);
 
-    const nextProducts = exists
-      ? products.map((item) =>
-          item.id === product.id ? product : item
-        )
-      : [...products, product];
+      setProducts((current) =>
+        current.filter((product) => product.id !== id)
+      );
 
-    persistProducts(nextProducts);
+      setProductsError(null);
+    } catch (error) {
+      console.error("Não foi possível excluir o produto:", error);
+
+      window.alert(
+        error instanceof Error
+          ? `Não foi possível excluir o produto: ${error.message}`
+          : "Não foi possível excluir o produto no Supabase."
+      );
+
+      throw error;
+    }
   }
 
-  // Exclui um produto.
-  function handleDeleteProduct(id: string) {
-    persistProducts(
-      products.filter((product) => product.id !== id)
-    );
-  }
-
-  // Navegação entre páginas.
   function handleNavigate(page: Page) {
     setCurrentPage(page);
 
     if (page === "inicio") {
       setSelectedCategory("Todas");
+      setSearchQuery("");
     }
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  // Seleção de categoria.
   function handleSelectCategory(category: string) {
     setSelectedCategory(category);
+    setSearchQuery("");
     setCurrentPage("inicio");
 
     window.setTimeout(() => {
-      document
-        .getElementById("produtos")
-        ?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
+      document.getElementById("produtos")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }, 100);
   }
 
-  // Abre o modal mantendo o produto selecionado.
-  const handleViewProduct = useCallback(
-    (product: Product) => {
-      if (closeTimerRef.current !== null) {
-        clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
+  function handleSearch(query: string) {
+    handleSelectCategory("Todas");
+    setSearchQuery(query);
+  }
 
-      setSelectedProduct(product);
-      setIsProductModalOpen(true);
-    },
-    []
-  );
+  function clearFilters() {
+    setSelectedCategory("Todas");
+    setSearchQuery("");
+  }
 
-  // Fecha o modal e aguarda a animação antes de limpar
-  // o produto selecionado.
+  const handleViewProduct = useCallback((product: Product) => {
+    if (closeTimerRef.current !== null) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+
+    setSelectedProduct(product);
+    setIsProductModalOpen(true);
+  }, []);
+
   const handleCloseProductModal = useCallback(() => {
     if (!isProductModalOpen) return;
 
@@ -244,7 +261,6 @@ function App() {
     }, MODAL_EXIT_DURATION);
   }, [isProductModalOpen]);
 
-  // Página administrativa.
   if (isAdmin) {
     return (
       <Admin
@@ -255,7 +271,6 @@ function App() {
     );
   }
 
-  // Conteúdo da página atual.
   function renderPage() {
     switch (currentPage) {
       case "sobre":
@@ -271,10 +286,7 @@ function App() {
             id="inicio"
             className="mx-auto max-w-[1440px] px-5 py-16 md:px-10 md:py-24"
           >
-            <section
-              id="produtos"
-              className="scroll-mt-28"
-            >
+            <section id="produtos" className="scroll-mt-28">
               <motion.div
                 variants={itemVariants}
                 initial="hidden"
@@ -287,31 +299,70 @@ function App() {
                   </p>
 
                   <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-                    {selectedCategory === "Todas"
-                      ? "Produtos em destaque"
-                      : selectedCategory}
-                    <span className="text-violet-400">
-                      .
-                    </span>
+                    {searchQuery
+                      ? `Resultados para "${searchQuery}"`
+                      : selectedCategory === "Todas"
+                        ? "Produtos em destaque"
+                        : selectedCategory}
+                    <span className="text-violet-400">.</span>
                   </h1>
 
                   <p className="mt-3 max-w-xl text-sm leading-6 text-zinc-400 sm:text-base">
-                    Descubra produtos selecionados para
-                    você.
+                    Descubra produtos selecionados para você.
                   </p>
                 </div>
 
-                <p className="text-sm text-zinc-400">
-                  {filteredProducts.length}{" "}
-                  {filteredProducts.length === 1
-                    ? "produto encontrado"
-                    : "produtos encontrados"}
-                </p>
+                <div className="flex items-center gap-4 text-sm text-zinc-400">
+                  <p>
+                    {filteredProducts.length}{" "}
+                    {filteredProducts.length === 1
+                      ? "produto encontrado"
+                      : "produtos encontrados"}
+                  </p>
+
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="text-violet-400 transition hover:text-violet-300"
+                    >
+                      Limpar busca
+                    </button>
+                  )}
+                </div>
               </motion.div>
 
-              {filteredProducts.length > 0 ? (
+              {loadingProducts ? (
+                <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-bg)] px-6 py-12 text-center">
+                  <p className="text-sm text-zinc-400">
+                    Carregando produtos...
+                  </p>
+                </div>
+              ) : productsError ? (
+                <div className="rounded-2xl border border-red-500/30 bg-[var(--surface-bg)] px-6 py-12 text-center">
+                  <h2 className="text-xl font-semibold">
+                    Não foi possível carregar o catálogo
+                  </h2>
+
+                  <p className="mt-2 text-sm text-zinc-400">
+                    {productsError}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProductsError(null);
+                      setLoadingProducts(true);
+                      void reloadProducts();
+                    }}
+                    className="mt-5 rounded-full bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-500"
+                  >
+                    Tentar novamente
+                  </button>
+                </div>
+              ) : filteredProducts.length > 0 ? (
                 <motion.div
-                  key={selectedCategory}
+                  key={`${selectedCategory}-${searchQuery}`}
                   variants={containerVariants}
                   initial="hidden"
                   animate="visible"
@@ -343,15 +394,14 @@ function App() {
                   </h2>
 
                   <p className="mt-2 text-sm text-zinc-400">
-                    Não existem produtos cadastrados nesta
-                    categoria.
+                    {searchQuery
+                      ? "Tente buscar por outro nome ou categoria."
+                      : "Não existem produtos cadastrados neste catálogo."}
                   </p>
 
                   <button
                     type="button"
-                    onClick={() =>
-                      setSelectedCategory("Todas")
-                    }
+                    onClick={clearFilters}
                     className="mt-5 rounded-full bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-500"
                   >
                     Ver todos os produtos
@@ -371,16 +421,14 @@ function App() {
         selectedCategory={selectedCategory}
         onSelectCategory={handleSelectCategory}
         onNavigate={handleNavigate}
+        onSearch={handleSearch}
       />
 
       <motion.div
         key={currentPage}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{
-          duration: 0.45,
-          ease: "easeOut",
-        }}
+        transition={{ duration: 0.45, ease: "easeOut" }}
       >
         {renderPage()}
       </motion.div>
@@ -391,8 +439,6 @@ function App() {
         onSelectCategory={handleSelectCategory}
       />
 
-      {/* O modal permanece montado durante a animação
-          de saída. Não adicione uma key dinâmica aqui. */}
       <ProductModal
         product={selectedProduct}
         isOpen={isProductModalOpen}

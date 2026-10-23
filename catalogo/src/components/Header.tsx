@@ -23,6 +23,7 @@ interface HeaderProps {
   selectedCategory: string;
   onSelectCategory: (category: string) => void;
   onNavigate: (page: Page) => void;
+  onSearch: (query: string) => void;
 }
 
 export default function Header({
@@ -30,6 +31,7 @@ export default function Header({
   selectedCategory,
   onSelectCategory,
   onNavigate,
+  onSearch,
 }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
 
@@ -120,10 +122,7 @@ export default function Header({
     const data = new FormData(form);
     const query = String(data.get("q") ?? "").trim();
 
-    if (!query) return;
-
-    // TODO: integrar a busca ao filtro de produtos no App.tsx.
-    console.log("Buscar produtos:", query);
+    onSearch(query);
 
     setSearchOpen(false);
     setMenuOpen(false);
