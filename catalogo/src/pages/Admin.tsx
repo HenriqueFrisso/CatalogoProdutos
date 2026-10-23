@@ -130,6 +130,10 @@ function Admin(_props: AdminProps = {}) {
       return;
     }
 
+    // Captura o ID após confirmar que a sessão existe, evitando o erro de null
+    // dentro da função assíncrona.
+    const userId = session.user.id;
+
     async function loadStore() {
       setCheckingAccess(true);
       setLoadingProducts(true);
@@ -148,7 +152,7 @@ function Admin(_props: AdminProps = {}) {
           .from("loja_usuario")
           .select("id_loja")
           .eq("id_loja", storeId)
-          .eq("id_usuario", session.user.id)
+          .eq("id_usuario", userId)
           .maybeSingle();
 
         if (membershipError) {
