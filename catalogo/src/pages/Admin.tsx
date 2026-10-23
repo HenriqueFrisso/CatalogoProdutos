@@ -7,7 +7,7 @@ import {
   Pencil,
   Plus,
   Search,
-  ShoppingBag,
+  Tags,
   Trash2,
   X,
 } from "lucide-react";
@@ -209,7 +209,7 @@ function Admin({ products, onSave, onDelete }: AdminProps) {
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <div className="flex items-center justify-between">
               <span className="text-sm text-zinc-400">Categorias</span>
-              <ShoppingBag className="text-violet-400" size={22} />
+              <Tags className="text-violet-400" size={22} />
             </div>
             <p className="mt-4 text-3xl font-bold">{categories.length}</p>
             <p className="mt-1 text-xs text-zinc-500">

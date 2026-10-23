@@ -4,7 +4,6 @@ import {
   ArrowRight,
   Search,
   Heart,
-  ShoppingBag,
   Sun,
   Moon,
   X,
@@ -309,20 +308,6 @@ export default function Header({
             className="hidden rounded-full p-2 text-zinc-400 transition hover:bg-white/10 hover:text-violet-300 sm:block"
           >
             <Heart size={21} />
-          </button>
-
-          {/* Sacola */}
-          <button
-            type="button"
-            onClick={() => console.log("Abrir sacola")}
-            aria-label="Sacola"
-            className="relative rounded-full p-2 text-zinc-400 transition hover:bg-white/10 hover:text-white"
-          >
-            <ShoppingBag size={21} />
-
-            <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-violet-500 px-1 text-[10px] font-bold text-white">
-              0
-            </span>
           </button>
 
           {/* Menu mobile */}

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import {
   Heart,
-  ShoppingBag,
+  ImageOff,
   ArrowUpRight,
   Star,
 } from "lucide-react";
@@ -20,13 +20,11 @@ export interface Product {
 
 interface ProductCardProps {
   product: Product;
-  onAddToCart?: (product: Product) => void;
   onViewProduct?: (product: Product) => void;
 }
 
 export default function ProductCard({
   product,
-  onAddToCart,
   onViewProduct,
 }: ProductCardProps) {
   const [isFavorite, setIsFavorite] = useState(false);
@@ -58,7 +56,7 @@ export default function ProductCard({
           />
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-zinc-600">
-            <ShoppingBag size={36} strokeWidth={1.2} />
+            <ImageOff size={36} strokeWidth={1.2} />
             <span className="text-xs">Imagem indisponível</span>
           </div>
         )}
@@ -139,8 +137,8 @@ export default function ProductCard({
           </div>
         )}
 
-        {/* Preço e botão */}
-        <div className="mt-4 flex items-end justify-between gap-2 border-t border-white/[0.07] pt-4">
+        {/* Preço */}
+        <div className="mt-4 border-t border-white/[0.07] pt-4">
           <div className="min-w-0">
             {oldPrice && product.oldPrice! > product.price && (
               <p className="text-xs text-zinc-500 line-through">
@@ -152,15 +150,6 @@ export default function ProductCard({
               {price}
             </p>
           </div>
-
-          <button
-            type="button"
-            onClick={() => onAddToCart?.(product)}
-            aria-label={`Adicionar ${product.name} à sacola`}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white transition-all duration-300 hover:scale-105 hover:bg-violet-500 active:scale-95"
-          >
-            <ShoppingBag size={19} />
-          </button>
         </div>
       </div>
     </article>

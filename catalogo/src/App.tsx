@@ -1,5 +1,10 @@
-
-import { useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { motion } from "motion/react";
 
 import Header from "./components/Header";
@@ -8,18 +13,23 @@ import ProductCard, { type Product } from "./components/ProductCard";
 import Sobre from "./pages/Sobre";
 import Contato from "./pages/Contato";
 import Admin from "./pages/Admin";
+import ProductModal from "./components/ProductModal";
 
 import { products as initialProducts } from "./data/products";
 
 type Page = "inicio" | "sobre" | "contato";
 
 const STORAGE_KEY = "catalogo-produtos-v1";
+const MODAL_EXIT_DURATION = 400;
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.12, delayChildren: 0.15 },
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.15,
+    },
   },
 };
 
@@ -28,7 +38,10 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.55, ease: "easeOut" as const },
+    transition: {
+      duration: 0.55,
+      ease: "easeOut" as const,
+    },
   },
 };
 
@@ -44,37 +57,80 @@ function loadProducts(): Product[] {
       }
     }
   } catch (error) {
-    console.error("Não foi possível carregar os produtos:", error);
+    console.error(
+      "Não foi possível carregar os produtos:",
+      error
+    );
   }
 
   return initialProducts;
 }
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<Page>("inicio");
-  const [selectedCategory, setSelectedCategory] = useState("Todas");
-  const [isAdmin, setIsAdmin] = useState(
-    () => window.location.pathname.replace(/\/+$/, "") === "/admin"
-  );
-  const [products, setProducts] = useState<Product[]>(loadProducts);
+  const [currentPage, setCurrentPage] =
+    useState<Page>("inicio");
 
+  const [selectedCategory, setSelectedCategory] =
+    useState("Todas");
+
+  const [selectedProduct, setSelectedProduct] =
+    useState<Product | null>(null);
+
+  const [isProductModalOpen, setIsProductModalOpen] =
+    useState(false);
+
+  const closeTimerRef =
+    useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [isAdmin, setIsAdmin] = useState(
+    () =>
+      window.location.pathname.replace(/\/+$/, "") ===
+      "/admin"
+  );
+
+  const [products, setProducts] =
+    useState<Product[]>(loadProducts);
+
+  // Detecta navegação pelo histórico do navegador.
   useEffect(() => {
     function handlePopState() {
       setIsAdmin(
-        window.location.pathname.replace(/\/+$/, "") === "/admin"
+        window.location.pathname.replace(/\/+$/, "") ===
+          "/admin"
       );
     }
 
     window.addEventListener("popstate", handlePopState);
 
-    return () => window.removeEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener(
+        "popstate",
+        handlePopState
+      );
+    };
   }, []);
 
+  // Limpa o temporizador ao desmontar o App.
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current !== null) {
+        clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Categorias disponíveis.
   const categories = useMemo(
-    () => [...new Set(products.map((product) => product.category))].sort(),
+    () =>
+      [
+        ...new Set(
+          products.map((product) => product.category)
+        ),
+      ].sort(),
     [products]
   );
 
+  // Produtos filtrados pela categoria selecionada.
   const filteredProducts = useMemo(
     () =>
       products.filter(
@@ -85,33 +141,50 @@ function App() {
     [products, selectedCategory]
   );
 
+  // Salva os produtos no estado e no armazenamento local.
   function persistProducts(nextProducts: Product[]) {
     setProducts(nextProducts);
 
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProducts));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(nextProducts)
+      );
     } catch (error) {
-      console.error("Não foi possível salvar os produtos:", error);
+      console.error(
+        "Não foi possível salvar os produtos:",
+        error
+      );
+
       window.alert(
         "Não foi possível salvar os produtos neste navegador. Verifique o espaço disponível."
       );
     }
   }
 
+  // Cria ou atualiza um produto.
   function handleSaveProduct(product: Product) {
-    const exists = products.some((item) => item.id === product.id);
+    const exists = products.some(
+      (item) => item.id === product.id
+    );
 
     const nextProducts = exists
-      ? products.map((item) => (item.id === product.id ? product : item))
+      ? products.map((item) =>
+          item.id === product.id ? product : item
+        )
       : [...products, product];
 
     persistProducts(nextProducts);
   }
 
+  // Exclui um produto.
   function handleDeleteProduct(id: string) {
-    persistProducts(products.filter((product) => product.id !== id));
+    persistProducts(
+      products.filter((product) => product.id !== id)
+    );
   }
 
+  // Navegação entre páginas.
   function handleNavigate(page: Page) {
     setCurrentPage(page);
 
@@ -119,21 +192,59 @@ function App() {
       setSelectedCategory("Todas");
     }
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   }
 
+  // Seleção de categoria.
   function handleSelectCategory(category: string) {
     setSelectedCategory(category);
     setCurrentPage("inicio");
 
     window.setTimeout(() => {
-      document.getElementById("produtos")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      document
+        .getElementById("produtos")
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
     }, 100);
   }
 
+  // Abre o modal mantendo o produto selecionado.
+  const handleViewProduct = useCallback(
+    (product: Product) => {
+      if (closeTimerRef.current !== null) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+
+      setSelectedProduct(product);
+      setIsProductModalOpen(true);
+    },
+    []
+  );
+
+  // Fecha o modal e aguarda a animação antes de limpar
+  // o produto selecionado.
+  const handleCloseProductModal = useCallback(() => {
+    if (!isProductModalOpen) return;
+
+    setIsProductModalOpen(false);
+
+    if (closeTimerRef.current !== null) {
+      clearTimeout(closeTimerRef.current);
+    }
+
+    closeTimerRef.current = setTimeout(() => {
+      setSelectedProduct(null);
+      closeTimerRef.current = null;
+    }, MODAL_EXIT_DURATION);
+  }, [isProductModalOpen]);
+
+  // Página administrativa.
   if (isAdmin) {
     return (
       <Admin
@@ -144,6 +255,7 @@ function App() {
     );
   }
 
+  // Conteúdo da página atual.
   function renderPage() {
     switch (currentPage) {
       case "sobre":
@@ -159,7 +271,10 @@ function App() {
             id="inicio"
             className="mx-auto max-w-[1440px] px-5 py-16 md:px-10 md:py-24"
           >
-            <section id="produtos" className="scroll-mt-28">
+            <section
+              id="produtos"
+              className="scroll-mt-28"
+            >
               <motion.div
                 variants={itemVariants}
                 initial="hidden"
@@ -175,11 +290,14 @@ function App() {
                     {selectedCategory === "Todas"
                       ? "Produtos em destaque"
                       : selectedCategory}
-                    <span className="text-violet-400">.</span>
+                    <span className="text-violet-400">
+                      .
+                    </span>
                   </h1>
 
                   <p className="mt-3 max-w-xl text-sm leading-6 text-zinc-400 sm:text-base">
-                    Descubra produtos selecionados para você.
+                    Descubra produtos selecionados para
+                    você.
                   </p>
                 </div>
 
@@ -207,12 +325,7 @@ function App() {
                     >
                       <ProductCard
                         product={product}
-                        onAddToCart={(item) =>
-                          console.log("Adicionar à sacola:", item.name)
-                        }
-                        onViewProduct={(item) =>
-                          console.log("Visualizar produto:", item.name)
-                        }
+                        onViewProduct={handleViewProduct}
                       />
                     </motion.div>
                   ))}
@@ -230,12 +343,15 @@ function App() {
                   </h2>
 
                   <p className="mt-2 text-sm text-zinc-400">
-                    Não existem produtos cadastrados nesta categoria.
+                    Não existem produtos cadastrados nesta
+                    categoria.
                   </p>
 
                   <button
                     type="button"
-                    onClick={() => setSelectedCategory("Todas")}
+                    onClick={() =>
+                      setSelectedCategory("Todas")
+                    }
                     className="mt-5 rounded-full bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-500"
                   >
                     Ver todos os produtos
@@ -261,7 +377,10 @@ function App() {
         key={currentPage}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: "easeOut" }}
+        transition={{
+          duration: 0.45,
+          ease: "easeOut",
+        }}
       >
         {renderPage()}
       </motion.div>
@@ -270,6 +389,14 @@ function App() {
         categories={categories}
         onNavigate={handleNavigate}
         onSelectCategory={handleSelectCategory}
+      />
+
+      {/* O modal permanece montado durante a animação
+          de saída. Não adicione uma key dinâmica aqui. */}
+      <ProductModal
+        product={selectedProduct}
+        isOpen={isProductModalOpen}
+        onClose={handleCloseProductModal}
       />
     </div>
   );
