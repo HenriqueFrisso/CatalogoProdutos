@@ -9,7 +9,7 @@ import {
 
 import { motion } from "motion/react";
 
-import Header from "./components/Header";
+import Header, { type Page } from "./components/Header";
 import Footer from "./components/Footer";
 import ProductCard, { type Product } from "./components/ProductCard";
 import Sobre from "./pages/Sobre";
@@ -17,13 +17,7 @@ import Contato from "./pages/Contato";
 import Admin from "./pages/Admin";
 import ProductModal from "./components/ProductModal";
 
-import {
-  deleteProduct,
-  getProducts,
-  saveProduct,
-} from "./services/products";
-
-type Page = "inicio" | "sobre" | "contato";
+import { getProducts } from "./services/products";
 
 const MODAL_EXIT_DURATION = 400;
 
@@ -52,10 +46,23 @@ function normalize(text: string) {
     .trim();
 }
 
+const FAVORITES_KEY = "catalogo-favoritos";
+
+function loadFavorites(): string[] {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "[]");
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>("inicio");
   const [selectedCategory, setSelectedCategory] = useState("Todas");
   const [searchQuery, setSearchQuery] = useState("");
+  const [favorites, setFavorites] = useState<string[]>(loadFavorites);
+  const [showFavorites, setShowFavorites] = useState(false);
   const [selectedProduct, setSelectedProduct] =
     useState<Product | null>(null);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -69,7 +76,6 @@ function App() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
-  const [savingProduct, setSavingProduct] = useState(false);
 
   // Carrega os produtos do Supabase.
   const reloadProducts = useCallback(async () => {
@@ -140,65 +146,24 @@ useEffect(() => {
       (product) =>
         (selectedCategory === "Todas" ||
           product.category === selectedCategory) &&
+        (!showFavorites || favorites.includes(product.id)) &&
         normalize(
           `${product.name} ${product.category} ${product.badge ?? ""}`
         ).includes(query)
     );
-  }, [products, selectedCategory, searchQuery]);
+  }, [products, selectedCategory, searchQuery, showFavorites, favorites]);
 
-  // Salva o produto no Supabase e atualiza a tela após o sucesso.
-  async function handleSaveProduct(product: Product) {
-    if (savingProduct) return;
+  function toggleFavorite(product: Product) {
+    const next = favorites.includes(product.id)
+      ? favorites.filter((id) => id !== product.id)
+      : [...favorites, product.id];
 
-    setSavingProduct(true);
+    setFavorites(next);
 
     try {
-      const saved = await saveProduct(product);
-
-      setProducts((current) => {
-        const exists = current.some((item) => item.id === saved.id);
-
-        return exists
-          ? current.map((item) => (item.id === saved.id ? saved : item))
-          : [...current, saved];
-      });
-
-      setProductsError(null);
-    } catch (error) {
-      console.error("Não foi possível salvar o produto:", error);
-
-      window.alert(
-        error instanceof Error
-          ? `Não foi possível salvar o produto: ${error.message}`
-          : "Não foi possível salvar o produto no Supabase."
-      );
-
-      throw error;
-    } finally {
-      setSavingProduct(false);
-    }
-  }
-
-  // Exclui o produto do Supabase e atualiza a lista.
-  async function handleDeleteProduct(id: string) {
-    try {
-      await deleteProduct(id);
-
-      setProducts((current) =>
-        current.filter((product) => product.id !== id)
-      );
-
-      setProductsError(null);
-    } catch (error) {
-      console.error("Não foi possível excluir o produto:", error);
-
-      window.alert(
-        error instanceof Error
-          ? `Não foi possível excluir o produto: ${error.message}`
-          : "Não foi possível excluir o produto no Supabase."
-      );
-
-      throw error;
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(next));
+    } catch {
+      // Sem armazenamento (ex.: navegação privada), vale só nesta sessão.
     }
   }
 
@@ -206,16 +171,15 @@ useEffect(() => {
     setCurrentPage(page);
 
     if (page === "inicio") {
-      setSelectedCategory("Todas");
-      setSearchQuery("");
+      clearFilters();
     }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleSelectCategory(category: string) {
+    clearFilters();
     setSelectedCategory(category);
-    setSearchQuery("");
     setCurrentPage("inicio");
 
     window.setTimeout(() => {
@@ -234,6 +198,12 @@ useEffect(() => {
   function clearFilters() {
     setSelectedCategory("Todas");
     setSearchQuery("");
+    setShowFavorites(false);
+  }
+
+  function handleShowFavorites() {
+    handleSelectCategory("Todas");
+    setShowFavorites(true);
   }
 
   const handleViewProduct = useCallback((product: Product) => {
@@ -263,18 +233,14 @@ useEffect(() => {
 
   if (isAdmin) {
     return (
-      <Admin
-        products={products}
-        onSave={handleSaveProduct}
-        onDelete={handleDeleteProduct}
-      />
+      <Admin />
     );
   }
 
   function renderPage() {
     switch (currentPage) {
       case "sobre":
-        return <Sobre />;
+        return <Sobre onExplore={() => handleNavigate("inicio")} />;
 
       case "contato":
         return <Contato />;
@@ -299,7 +265,9 @@ useEffect(() => {
                   </p>
 
                   <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-                    {searchQuery
+                    {showFavorites
+                      ? "Seus favoritos"
+                      : searchQuery
                       ? `Resultados para "${searchQuery}"`
                       : selectedCategory === "Todas"
                         ? "Produtos em destaque"
@@ -307,12 +275,12 @@ useEffect(() => {
                     <span className="text-violet-400">.</span>
                   </h1>
 
-                  <p className="mt-3 max-w-xl text-sm leading-6 text-zinc-400 sm:text-base">
+                  <p className="mt-3 max-w-xl text-sm leading-6 text-muted sm:text-base">
                     Descubra produtos selecionados para você.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-4 text-sm text-zinc-400">
+                <div className="flex items-center gap-4 text-sm text-muted">
                   <p>
                     {filteredProducts.length}{" "}
                     {filteredProducts.length === 1
@@ -320,13 +288,13 @@ useEffect(() => {
                       : "produtos encontrados"}
                   </p>
 
-                  {searchQuery && (
+                  {(searchQuery || showFavorites) && (
                     <button
                       type="button"
                       onClick={clearFilters}
                       className="text-violet-400 transition hover:text-violet-300"
                     >
-                      Limpar busca
+                      {showFavorites ? "Ver todos" : "Limpar busca"}
                     </button>
                   )}
                 </div>
@@ -334,7 +302,7 @@ useEffect(() => {
 
               {loadingProducts ? (
                 <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-bg)] px-6 py-12 text-center">
-                  <p className="text-sm text-zinc-400">
+                  <p className="text-sm text-muted">
                     Carregando produtos...
                   </p>
                 </div>
@@ -344,7 +312,7 @@ useEffect(() => {
                     Não foi possível carregar o catálogo
                   </h2>
 
-                  <p className="mt-2 text-sm text-zinc-400">
+                  <p className="mt-2 text-sm text-muted">
                     {productsError}
                   </p>
 
@@ -362,7 +330,7 @@ useEffect(() => {
                 </div>
               ) : filteredProducts.length > 0 ? (
                 <motion.div
-                  key={`${selectedCategory}-${searchQuery}`}
+                  key={`${selectedCategory}-${searchQuery}-${showFavorites}`}
                   variants={containerVariants}
                   initial="hidden"
                   animate="visible"
@@ -376,6 +344,8 @@ useEffect(() => {
                     >
                       <ProductCard
                         product={product}
+                        isFavorite={favorites.includes(product.id)}
+                        onToggleFavorite={toggleFavorite}
                         onViewProduct={handleViewProduct}
                       />
                     </motion.div>
@@ -393,8 +363,10 @@ useEffect(() => {
                     Nenhum produto encontrado
                   </h2>
 
-                  <p className="mt-2 text-sm text-zinc-400">
-                    {searchQuery
+                  <p className="mt-2 text-sm text-muted">
+                    {showFavorites
+                      ? "Toque no coração de um produto para salvá-lo aqui."
+                      : searchQuery
                       ? "Tente buscar por outro nome ou categoria."
                       : "Não existem produtos cadastrados neste catálogo."}
                   </p>
@@ -422,6 +394,9 @@ useEffect(() => {
         onSelectCategory={handleSelectCategory}
         onNavigate={handleNavigate}
         onSearch={handleSearch}
+        favoritesCount={favorites.length}
+        showFavorites={showFavorites}
+        onShowFavorites={handleShowFavorites}
       />
 
       <motion.div
@@ -443,6 +418,10 @@ useEffect(() => {
         product={selectedProduct}
         isOpen={isProductModalOpen}
         onClose={handleCloseProductModal}
+        isFavorite={
+          selectedProduct !== null && favorites.includes(selectedProduct.id)
+        }
+        onToggleFavorite={toggleFavorite}
       />
     </div>
   );

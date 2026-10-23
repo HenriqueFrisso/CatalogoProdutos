@@ -30,7 +30,7 @@ const features = [
   },
 ];
 
-export default function Sobre() {
+export default function Sobre({ onExplore }: { onExplore: () => void }) {
   return (
     <main className="min-h-screen overflow-hidden bg-[var(--page-bg)] text-[var(--text-primary)]">
       {/* Apresentação */}
@@ -57,7 +57,7 @@ export default function Sobre() {
             </span>
           </h1>
 
-          <p className="mx-auto mt-7 max-w-2xl text-base leading-8 text-zinc-400 md:text-lg">
+          <p className="mx-auto mt-7 max-w-2xl text-base leading-8 text-muted md:text-lg">
             Criamos um espaço para você descobrir, explorar e conhecer
             produtos de forma simples, intuitiva e agradável.
           </p>
@@ -92,7 +92,7 @@ export default function Sobre() {
               Descobrir o que você procura deve ser simples.
             </h2>
 
-            <p className="mt-6 leading-8 text-zinc-400">
+            <p className="mt-6 leading-8 text-muted">
               O Catálogo nasceu com a proposta de reunir produtos em um
               ambiente digital organizado, moderno e fácil de utilizar.
               Queremos tornar a navegação mais intuitiva, facilitando a
@@ -100,7 +100,7 @@ export default function Sobre() {
               apresentadas com clareza.
             </p>
 
-            <p className="mt-4 leading-8 text-zinc-400">
+            <p className="mt-4 leading-8 text-muted">
               Cada detalhe da interface busca combinar funcionalidade,
               acessibilidade e uma experiência visual agradável.
             </p>
@@ -115,7 +115,7 @@ export default function Sobre() {
           >
             <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-violet-600/20 to-indigo-600/5 blur-2xl" />
 
-            <div className="relative rounded-3xl border border-white/10 bg-white/[0.03] p-8 md:p-10">
+            <div className="relative rounded-3xl border border-fg/10 bg-fg/[0.03] p-8 md:p-10">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-300">
                 <Target size={28} />
               </div>
@@ -124,7 +124,7 @@ export default function Sobre() {
                 Nossa missão
               </h3>
 
-              <p className="mt-4 leading-7 text-zinc-400">
+              <p className="mt-4 leading-7 text-muted">
                 Oferecer uma experiência de catálogo que valorize a
                 organização dos produtos, a facilidade de navegação e
                 a descoberta de novas possibilidades.
@@ -158,7 +158,7 @@ export default function Sobre() {
               Pensado para você.
             </h2>
 
-            <p className="mt-4 leading-7 text-zinc-400">
+            <p className="mt-4 leading-7 text-muted">
               Uma interface construída para tornar a experiência de
               explorar produtos mais agradável.
             </p>
@@ -179,7 +179,7 @@ export default function Sobre() {
                     delay: index * 0.12,
                   }}
                   whileHover={{ y: -5 }}
-                  className="rounded-2xl border border-white/10 bg-white/[0.025] p-7 transition-colors hover:border-violet-500/30 hover:bg-white/[0.04]"
+                  className="rounded-2xl border border-fg/10 bg-fg/[0.025] p-7 transition-colors hover:border-violet-500/30 hover:bg-fg/[0.04]"
                 >
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/10 text-violet-300">
                     <Icon size={23} />
@@ -189,7 +189,7 @@ export default function Sobre() {
                     {feature.title}
                   </h3>
 
-                  <p className="mt-3 text-sm leading-7 text-zinc-400">
+                  <p className="mt-3 text-sm leading-7 text-muted">
                     {feature.description}
                   </p>
                 </motion.article>
@@ -206,7 +206,7 @@ export default function Sobre() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl border border-violet-400/20 bg-gradient-to-br from-violet-950/70 via-[#11111b] to-indigo-950/40 px-6 py-14 text-center sm:px-12 md:py-20"
+          className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl border border-violet-400/20 bg-gradient-to-br from-violet-500/15 via-surface to-indigo-500/10 px-6 py-14 text-center sm:px-12 md:py-20"
         >
           <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-96 -translate-x-1/2 rounded-full bg-violet-500/15 blur-[90px]" />
 
@@ -217,18 +217,19 @@ export default function Sobre() {
               Pronto para explorar?
             </h2>
 
-            <p className="mx-auto mt-4 max-w-xl leading-7 text-zinc-400">
+            <p className="mx-auto mt-4 max-w-xl leading-7 text-muted">
               Descubra os produtos disponíveis e encontre algo que
               combine com você.
             </p>
 
-            <a
-              href="#produtos"
-              className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-zinc-950 transition hover:-translate-y-0.5 hover:bg-violet-100"
+            <button
+              type="button"
+              onClick={onExplore}
+              className="mt-8 inline-flex items-center gap-2 rounded-full bg-violet-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-violet-500"
             >
               Explorar produtos
               <ArrowRight size={17} />
-            </a>
+            </button>
           </div>
         </motion.div>
       </section>

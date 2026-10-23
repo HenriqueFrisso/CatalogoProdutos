@@ -20,14 +20,17 @@ export interface Product {
 
 interface ProductCardProps {
   product: Product;
+  isFavorite: boolean;
+  onToggleFavorite: (product: Product) => void;
   onViewProduct?: (product: Product) => void;
 }
 
 export default function ProductCard({
   product,
+  isFavorite,
+  onToggleFavorite,
   onViewProduct,
 }: ProductCardProps) {
-  const [isFavorite, setIsFavorite] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   const price = product.price.toLocaleString("pt-BR", {
@@ -41,10 +44,10 @@ export default function ProductCard({
   });
 
   return (
-    <article className="group min-w-0 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#101117] transition-all duration-300 hover:-translate-y-1 hover:border-violet-500/30 hover:shadow-xl hover:shadow-violet-950/20">
+    <article className="group min-w-0 overflow-hidden rounded-2xl border border-fg/[0.08] bg-surface transition-all duration-300 hover:-translate-y-1 hover:border-violet-500/30 hover:shadow-xl hover:shadow-violet-950/20">
 
       {/* Imagem */}
-      <div className="relative aspect-[4/5] overflow-hidden bg-white/[0.04]">
+      <div className="relative aspect-[4/5] overflow-hidden bg-fg/[0.04]">
 
         {!imageError ? (
           <img
@@ -55,7 +58,7 @@ export default function ProductCard({
             className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-3 text-zinc-600">
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-subtle">
             <ImageOff size={36} strokeWidth={1.2} />
             <span className="text-xs">Imagem indisponível</span>
           </div>
@@ -74,7 +77,7 @@ export default function ProductCard({
         {/* Favoritos */}
         <button
           type="button"
-          onClick={() => setIsFavorite((value) => !value)}
+          onClick={() => onToggleFavorite(product)}
           aria-label={
             isFavorite
               ? "Remover dos favoritos"
@@ -116,7 +119,7 @@ export default function ProductCard({
           onClick={() => onViewProduct?.(product)}
           className="mt-2 block w-full text-left"
         >
-          <h3 className="line-clamp-2 min-h-[3rem] text-base font-semibold leading-6 text-white transition-colors group-hover:text-violet-200">
+          <h3 className="line-clamp-2 min-h-[3rem] text-base font-semibold leading-6 text-fg transition-colors group-hover:text-violet-200">
             {product.name}
           </h3>
         </button>
@@ -128,25 +131,25 @@ export default function ProductCard({
               size={14}
               className="fill-amber-400 text-amber-400"
             />
-            <span className="text-xs font-medium text-zinc-300">
+            <span className="text-xs font-medium text-fg/80">
               {product.rating.toFixed(1).replace(".", ",")}
             </span>
-            <span className="text-xs text-zinc-600">
+            <span className="text-xs text-subtle">
               / 5
             </span>
           </div>
         )}
 
         {/* Preço */}
-        <div className="mt-4 border-t border-white/[0.07] pt-4">
+        <div className="mt-4 border-t border-fg/[0.07] pt-4">
           <div className="min-w-0">
             {oldPrice && product.oldPrice! > product.price && (
-              <p className="text-xs text-zinc-500 line-through">
+              <p className="text-xs text-subtle line-through">
                 {oldPrice}
               </p>
             )}
 
-            <p className="text-lg font-bold tracking-tight text-white">
+            <p className="text-lg font-bold tracking-tight text-fg">
               {price}
             </p>
           </div>

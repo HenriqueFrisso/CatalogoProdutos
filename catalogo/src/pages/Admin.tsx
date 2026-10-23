@@ -20,13 +20,6 @@ import {
   saveProduct as saveProductToSupabase,
 } from "../services/products";
 
-interface AdminProps {
-  // Mantidos opcionais para continuar compatível com chamadas existentes no App.
-  products?: Product[];
-  onSave?: (product: Product) => void;
-  onDelete?: (id: string) => void;
-}
-
 type ProductForm = {
   name: string;
   category: string;
@@ -48,7 +41,7 @@ const emptyForm: ProductForm = {
 };
 
 const inputClass =
-  "mt-2 w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-violet-500";
+  "mt-2 w-full rounded-xl border border-fg/10 bg-surface px-4 py-3 text-sm text-fg outline-none transition placeholder:text-subtle focus:border-violet-500";
 
 const formatPrice = (price: number) =>
   price.toLocaleString("pt-BR", {
@@ -61,15 +54,15 @@ const catalogId = import.meta.env.VITE_SUPABASE_CATALOGO_ID as
   | undefined;
 
 // ID da loja associada ao catálogo configurado neste projeto.
-// const storeId = "ccb44ea6-7025-4873-9396-c0f1eb52bb59";
-const storeId = "7f7b49ee-cd63-4c0c-a48a-1461bb7eaa13";
+const storeId = "ccb44ea6-7025-4873-9396-c0f1eb52bb59";
+// const storeId = "7f7b49ee-cd63-4c0c-a48a-1461bb7eaa13";
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   return "Ocorreu um erro inesperado. Tente novamente.";
 }
 
-function Admin(_props: AdminProps = {}) {
+function Admin() {
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [checkingAccess, setCheckingAccess] = useState(false);
@@ -122,19 +115,15 @@ function Admin(_props: AdminProps = {}) {
   useEffect(() => {
     let cancelled = false;
 
-    if (!session) {
-      setHasStoreAccess(false);
-      setProducts([]);
-      setCheckingAccess(false);
-      setLoadingProducts(false);
-      return;
-    }
+    // Sem sessão a tela de login é exibida; o estado é zerado no próximo loadStore.
+    if (!session) return;
 
     // Captura o ID após confirmar que a sessão existe, evitando o erro de null
     // dentro da função assíncrona.
     const userId = session.user.id;
 
     async function loadStore() {
+      setProducts([]);
       setCheckingAccess(true);
       setLoadingProducts(true);
       setPageError("");
@@ -421,7 +410,7 @@ function Admin(_props: AdminProps = {}) {
   if (authLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[var(--page-bg)] px-4 text-[var(--text-primary)]">
-        <p className="text-sm text-zinc-400">Verificando sua sessão...</p>
+        <p className="text-sm text-muted">Verificando sua sessão...</p>
       </main>
     );
   }
@@ -429,10 +418,10 @@ function Admin(_props: AdminProps = {}) {
   if (!session) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[var(--page-bg)] px-4 py-10 text-[var(--text-primary)]">
-        <section className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.03] p-7 shadow-2xl sm:p-9">
+        <section className="w-full max-w-md rounded-3xl border border-fg/10 bg-fg/[0.03] p-7 shadow-2xl sm:p-9">
           <a
             href="/"
-            className="mb-8 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-violet-400"
+            className="mb-8 inline-flex items-center gap-2 text-sm text-muted transition hover:text-violet-400"
           >
             <ArrowLeft size={16} />
             Voltar ao catálogo
@@ -447,13 +436,13 @@ function Admin(_props: AdminProps = {}) {
           <h1 className="mt-2 text-3xl font-bold">
             Administração<span className="text-violet-400">.</span>
           </h1>
-          <p className="mt-2 text-sm leading-6 text-zinc-400">
+          <p className="mt-2 text-sm leading-6 text-muted">
             Entre com o e-mail e a senha da sua conta Supabase para gerenciar os
             produtos da loja.
           </p>
 
           <form onSubmit={handleLogin} className="mt-7 space-y-5">
-            <label className="block text-sm text-zinc-300">
+            <label className="block text-sm text-fg/80">
               E-mail
               <input
                 className={inputClass}
@@ -466,7 +455,7 @@ function Admin(_props: AdminProps = {}) {
               />
             </label>
 
-            <label className="block text-sm text-zinc-300">
+            <label className="block text-sm text-fg/80">
               Senha
               <input
                 className={inputClass}
@@ -501,7 +490,7 @@ function Admin(_props: AdminProps = {}) {
   if (checkingAccess || loadingProducts) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[var(--page-bg)] px-4 text-[var(--text-primary)]">
-        <p className="text-sm text-zinc-400">Verificando acesso à loja...</p>
+        <p className="text-sm text-muted">Verificando acesso à loja...</p>
       </main>
     );
   }
@@ -509,7 +498,7 @@ function Admin(_props: AdminProps = {}) {
   if (!hasStoreAccess) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[var(--page-bg)] px-4 py-10 text-[var(--text-primary)]">
-        <section className="w-full max-w-lg rounded-3xl border border-white/10 bg-white/[0.03] p-7 sm:p-9">
+        <section className="w-full max-w-lg rounded-3xl border border-fg/10 bg-fg/[0.03] p-7 sm:p-9">
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-violet-400">
             Acesso à loja
           </p>
@@ -528,7 +517,7 @@ function Admin(_props: AdminProps = {}) {
             <button
               type="button"
               onClick={() => void handleLogout()}
-              className="rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-zinc-300 hover:bg-white/5"
+              className="rounded-xl border border-fg/10 px-4 py-3 text-sm font-semibold text-fg/80 hover:bg-fg/5"
             >
               Sair da conta
             </button>
@@ -541,8 +530,8 @@ function Admin(_props: AdminProps = {}) {
   if (!codeValid) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[var(--page-bg)] px-4 py-10 text-[var(--text-primary)]">
-        <section className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.03] p-7 shadow-2xl sm:p-9">
-          <a href="/" className="mb-8 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-violet-400">
+        <section className="w-full max-w-md rounded-3xl border border-fg/10 bg-fg/[0.03] p-7 shadow-2xl sm:p-9">
+          <a href="/" className="mb-8 inline-flex items-center gap-2 text-sm text-muted transition hover:text-violet-400">
             <ArrowLeft size={16} /> Voltar ao catálogo
           </a>
           <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-300">
@@ -550,11 +539,11 @@ function Admin(_props: AdminProps = {}) {
           </div>
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-violet-400">Validação obrigatória</p>
           <h1 className="mt-2 text-2xl font-bold">Código mensal da loja</h1>
-          <p className="mt-3 text-sm leading-6 text-zinc-400">
+          <p className="mt-3 text-sm leading-6 text-muted">
             Para administrar os produtos, informe o código mensal que você recebeu. A validação vale para o ciclo mensal vigente.
           </p>
           <form onSubmit={handleVerifyCode} className="mt-7 space-y-5">
-            <label className="block text-sm text-zinc-300">
+            <label className="block text-sm text-fg/80">
               Código mensal
               <input
                 className={inputClass}
@@ -572,7 +561,7 @@ function Admin(_props: AdminProps = {}) {
             <button type="submit" disabled={checkingCode || !accessCode.trim()} className="w-full rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-60">
               {checkingCode ? "Validando código..." : "Validar código e acessar o painel"}
             </button>
-            <button type="button" onClick={() => void handleLogout()} className="w-full rounded-xl border border-white/10 px-5 py-3 text-sm font-semibold text-zinc-300 transition hover:bg-white/5">
+            <button type="button" onClick={() => void handleLogout()} className="w-full rounded-xl border border-fg/10 px-5 py-3 text-sm font-semibold text-fg/80 transition hover:bg-fg/5">
               Sair da conta
             </button>
           </form>
@@ -588,7 +577,7 @@ function Admin(_props: AdminProps = {}) {
           <div>
             <a
               href="/"
-              className="mb-5 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-violet-400"
+              className="mb-5 inline-flex items-center gap-2 text-sm text-muted transition hover:text-violet-400"
             >
               <ArrowLeft size={16} />
               Voltar ao catálogo
@@ -599,7 +588,7 @@ function Admin(_props: AdminProps = {}) {
             <h1 className="mt-2 text-3xl font-bold sm:text-4xl">
               Administração<span className="text-violet-400">.</span>
             </h1>
-            <p className="mt-2 text-sm text-zinc-400">
+            <p className="mt-2 text-sm text-muted">
               Gerencie os produtos da sua loja. As alterações são salvas no Supabase.
             </p>
           </div>
@@ -608,7 +597,7 @@ function Admin(_props: AdminProps = {}) {
             <button
               type="button"
               onClick={() => void handleLogout()}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-zinc-300 transition hover:bg-white/5"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-fg/10 px-4 py-3 text-sm font-semibold text-fg/80 transition hover:bg-fg/5"
             >
               <LogOut size={17} />
               Sair
@@ -631,38 +620,38 @@ function Admin(_props: AdminProps = {}) {
         )}
 
         <section className="mb-8 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <div className="rounded-2xl border border-fg/10 bg-fg/[0.03] p-5">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-zinc-400">Total de produtos</span>
+              <span className="text-sm text-muted">Total de produtos</span>
               <Package className="text-violet-400" size={22} />
             </div>
             <p className="mt-4 text-3xl font-bold">{products.length}</p>
-            <p className="mt-1 text-xs text-zinc-500">Produtos no catálogo do Supabase</p>
+            <p className="mt-1 text-xs text-subtle">Produtos no catálogo do Supabase</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <div className="rounded-2xl border border-fg/10 bg-fg/[0.03] p-5">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-zinc-400">Categorias</span>
+              <span className="text-sm text-muted">Categorias</span>
               <Tags className="text-violet-400" size={22} />
             </div>
             <p className="mt-4 text-3xl font-bold">{categories.length}</p>
-            <p className="mt-1 text-xs text-zinc-500">Categorias distintas no catálogo</p>
+            <p className="mt-1 text-xs text-subtle">Categorias distintas no catálogo</p>
           </div>
         </section>
 
         {formOpen && (
-          <section className="mb-8 rounded-2xl border border-violet-500/30 bg-white/[0.03] p-5 sm:p-7">
+          <section className="mb-8 rounded-2xl border border-violet-500/30 bg-fg/[0.03] p-5 sm:p-7">
             <div className="mb-6 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-semibold">
                   {editingId ? "Editar produto" : "Novo produto"}
                 </h2>
-                <p className="mt-1 text-sm text-zinc-400">Preencha as informações abaixo.</p>
+                <p className="mt-1 text-sm text-muted">Preencha as informações abaixo.</p>
               </div>
               <button
                 type="button"
                 onClick={() => setFormOpen(false)}
                 aria-label="Fechar formulário"
-                className="rounded-lg p-2 text-zinc-400 transition hover:bg-white/10 hover:text-white"
+                className="rounded-lg p-2 text-muted transition hover:bg-fg/10 hover:text-fg"
               >
                 <X size={20} />
               </button>
@@ -670,46 +659,46 @@ function Admin(_props: AdminProps = {}) {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid gap-5 md:grid-cols-2">
-                <label className="text-sm text-zinc-300">
+                <label className="text-sm text-fg/80">
                   Nome do produto *
                   <input className={inputClass} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Ex.: Headphone Wireless" required />
                 </label>
-                <label className="text-sm text-zinc-300">
+                <label className="text-sm text-fg/80">
                   Categoria *
                   <input className={inputClass} list="admin-categories" value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} placeholder="Ex.: Eletrônicos" required />
                   <datalist id="admin-categories">
                     {categories.map((category) => <option key={category} value={category} />)}
                   </datalist>
                 </label>
-                <label className="text-sm text-zinc-300">
+                <label className="text-sm text-fg/80">
                   Preço (R$) *
                   <input className={inputClass} type="number" min="0" step="0.01" value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} placeholder="199.90" required />
                 </label>
-                <label className="text-sm text-zinc-300">
+                <label className="text-sm text-fg/80">
                   Preço anterior (R$)
                   <input className={inputClass} type="number" min="0" step="0.01" value={form.oldPrice} onChange={(event) => setForm({ ...form, oldPrice: event.target.value })} placeholder="Opcional" />
                 </label>
-                <label className="text-sm text-zinc-300">
+                <label className="text-sm text-fg/80">
                   Avaliação (0 a 5)
                   <input className={inputClass} type="number" min="0" max="5" step="0.1" value={form.rating} onChange={(event) => setForm({ ...form, rating: event.target.value })} />
                 </label>
-                <label className="text-sm text-zinc-300">
+                <label className="text-sm text-fg/80">
                   Selo
                   <input className={inputClass} value={form.badge} onChange={(event) => setForm({ ...form, badge: event.target.value })} placeholder="Ex.: Novo, Destaque" />
                 </label>
               </div>
 
-              <label className="block text-sm text-zinc-300">
+              <label className="block text-sm text-fg/80">
                 URL da imagem
                 <div className="relative">
-                  <ImagePlus size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
+                  <ImagePlus size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-subtle" />
                   <input className={`${inputClass} pl-11`} type="url" value={form.image} onChange={(event) => setForm({ ...form, image: event.target.value })} placeholder="https://exemplo.com/imagem.jpg" />
                 </div>
               </label>
 
               {form.image && (
-                <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-900 p-3">
-                  <p className="mb-3 text-xs text-zinc-400">Prévia da imagem</p>
+                <div className="overflow-hidden rounded-xl border border-fg/10 bg-surface p-3">
+                  <p className="mb-3 text-xs text-muted">Prévia da imagem</p>
                   <img src={form.image} alt="Prévia do produto" className="h-44 w-full rounded-lg object-contain" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} onLoad={(event) => { event.currentTarget.style.visibility = "visible"; }} />
                 </div>
               )}
@@ -720,7 +709,7 @@ function Admin(_props: AdminProps = {}) {
                 <button type="submit" disabled={savingProduct} className="rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:opacity-60">
                   {savingProduct ? "Salvando..." : editingId ? "Salvar alterações" : "Cadastrar produto"}
                 </button>
-                <button type="button" onClick={() => setFormOpen(false)} disabled={savingProduct} className="rounded-xl border border-white/10 px-5 py-3 text-sm font-semibold text-zinc-300 transition hover:bg-white/5">
+                <button type="button" onClick={() => setFormOpen(false)} disabled={savingProduct} className="rounded-xl border border-fg/10 px-5 py-3 text-sm font-semibold text-fg/80 transition hover:bg-fg/5">
                   Cancelar
                 </button>
               </div>
@@ -728,18 +717,18 @@ function Admin(_props: AdminProps = {}) {
           </section>
         )}
 
-        <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
-          <div className="flex flex-col gap-4 border-b border-white/10 p-5 md:flex-row md:items-center md:justify-between">
+        <section className="overflow-hidden rounded-2xl border border-fg/10 bg-fg/[0.02]">
+          <div className="flex flex-col gap-4 border-b border-fg/10 p-5 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-lg font-semibold">Produtos cadastrados</h2>
-              <p className="mt-1 text-sm text-zinc-500">{filteredProducts.length} resultado(s)</p>
+              <p className="mt-1 text-sm text-subtle">{filteredProducts.length} resultado(s)</p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
               <div className="relative">
-                <Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar produto..." aria-label="Buscar produto" className="w-full rounded-xl border border-white/10 bg-zinc-900 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-violet-500 sm:w-56" />
+                <Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
+                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar produto..." aria-label="Buscar produto" className="w-full rounded-xl border border-fg/10 bg-surface py-2.5 pl-10 pr-4 text-sm outline-none focus:border-violet-500 sm:w-56" />
               </div>
-              <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} aria-label="Filtrar por categoria" className="rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-violet-500">
+              <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} aria-label="Filtrar por categoria" className="rounded-xl border border-fg/10 bg-surface px-3 py-2.5 text-sm outline-none focus:border-violet-500">
                 <option value="Todas">Todas as categorias</option>
                 {categories.map((category) => <option key={category} value={category}>{category}</option>)}
               </select>
@@ -747,17 +736,17 @@ function Admin(_props: AdminProps = {}) {
           </div>
 
           {loadingProducts ? (
-            <p className="px-5 py-14 text-center text-sm text-zinc-400">Carregando produtos...</p>
+            <p className="px-5 py-14 text-center text-sm text-muted">Carregando produtos...</p>
           ) : filteredProducts.length === 0 ? (
             <div className="px-5 py-14 text-center">
-              <Package size={32} className="mx-auto text-zinc-600" />
+              <Package size={32} className="mx-auto text-subtle" />
               <p className="mt-3 font-medium">Nenhum produto encontrado</p>
-              <p className="mt-1 text-sm text-zinc-500">Experimente mudar a busca ou cadastrar um produto.</p>
+              <p className="mt-1 text-sm text-subtle">Experimente mudar a busca ou cadastrar um produto.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-left text-sm">
-                <thead className="bg-white/[0.03] text-xs uppercase tracking-wider text-zinc-500">
+                <thead className="bg-fg/[0.03] text-xs uppercase tracking-wider text-subtle">
                   <tr>
                     <th className="px-5 py-4 font-medium">Produto</th>
                     <th className="px-5 py-4 font-medium">Categoria</th>
@@ -766,36 +755,36 @@ function Admin(_props: AdminProps = {}) {
                     <th className="px-5 py-4 text-right font-medium">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-fg/5">
                   {filteredProducts.map((product) => (
-                    <tr key={product.id} className="transition hover:bg-white/[0.02]">
+                    <tr key={product.id} className="transition hover:bg-fg/[0.02]">
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           {product.image ? (
-                            <img src={product.image} alt="" className="h-12 w-12 rounded-lg bg-zinc-800 object-cover" />
+                            <img src={product.image} alt="" className="h-12 w-12 rounded-lg bg-fg/10 object-cover" />
                           ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-zinc-800">
-                              <ImagePlus size={18} className="text-zinc-500" />
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-fg/10">
+                              <ImagePlus size={18} className="text-subtle" />
                             </div>
                           )}
                           <div>
-                            <p className="font-medium text-white">{product.name}</p>
-                            <p className="mt-1 text-xs text-zinc-500">ID: {product.id}</p>
+                            <p className="font-medium text-fg">{product.name}</p>
+                            <p className="mt-1 text-xs text-subtle">ID: {product.id}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-zinc-400">{product.category}</td>
-                      <td className="px-5 py-4 font-medium text-white">
+                      <td className="px-5 py-4 text-muted">{product.category}</td>
+                      <td className="px-5 py-4 font-medium text-fg">
                         {formatPrice(product.price)}
-                        {product.oldPrice != null && <p className="mt-1 text-xs text-zinc-500 line-through">{formatPrice(product.oldPrice)}</p>}
+                        {product.oldPrice != null && <p className="mt-1 text-xs text-subtle line-through">{formatPrice(product.oldPrice)}</p>}
                       </td>
-                      <td className="px-5 py-4 text-zinc-300">★ {product.rating ?? "—"}</td>
+                      <td className="px-5 py-4 text-fg/80">★ {product.rating ?? "—"}</td>
                       <td className="px-5 py-4">
                         <div className="flex justify-end gap-2">
-                          <button type="button" onClick={() => openEditProduct(product)} title="Editar produto" aria-label={`Editar ${product.name}`} className="rounded-lg border border-white/10 p-2.5 text-zinc-300 transition hover:border-violet-500/50 hover:bg-violet-500/10 hover:text-violet-300">
+                          <button type="button" onClick={() => openEditProduct(product)} title="Editar produto" aria-label={`Editar ${product.name}`} className="rounded-lg border border-fg/10 p-2.5 text-fg/80 transition hover:border-violet-500/50 hover:bg-violet-500/10 hover:text-violet-300">
                             <Pencil size={16} />
                           </button>
-                          <button type="button" onClick={() => void handleDelete(product)} title="Excluir produto" aria-label={`Excluir ${product.name}`} className="rounded-lg border border-white/10 p-2.5 text-zinc-300 transition hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400">
+                          <button type="button" onClick={() => void handleDelete(product)} title="Excluir produto" aria-label={`Excluir ${product.name}`} className="rounded-lg border border-fg/10 p-2.5 text-fg/80 transition hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400">
                             <Trash2 size={16} />
                           </button>
                         </div>

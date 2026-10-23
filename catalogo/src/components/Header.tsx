@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "../hooks/useTheme";
 
-type Page = "inicio" | "sobre" | "contato";
+export type Page = "inicio" | "sobre" | "contato";
 
 interface HeaderProps {
   categories: string[];
@@ -24,6 +24,9 @@ interface HeaderProps {
   onSelectCategory: (category: string) => void;
   onNavigate: (page: Page) => void;
   onSearch: (query: string) => void;
+  favoritesCount: number;
+  showFavorites: boolean;
+  onShowFavorites: () => void;
 }
 
 export default function Header({
@@ -32,6 +35,9 @@ export default function Header({
   onSelectCategory,
   onNavigate,
   onSearch,
+  favoritesCount,
+  showFavorites,
+  onShowFavorites,
 }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
 
@@ -130,7 +136,7 @@ export default function Header({
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#090a10]/90 text-white shadow-lg shadow-black/5 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-fg/10 bg-page/90 text-fg shadow-lg shadow-black/5 backdrop-blur-xl">
       <div className="mx-auto flex h-[76px] max-w-[1440px] items-center justify-between gap-4 px-5 md:gap-6 md:px-10">
         {/* Logo */}
         <button
@@ -155,7 +161,7 @@ export default function Header({
               key={item.page}
               type="button"
               onClick={() => navigateTo(item.page)}
-              className="group relative py-2 text-sm text-zinc-400 transition-colors duration-300 hover:text-violet-300"
+              className="group relative py-2 text-sm text-muted transition-colors duration-300 hover:text-violet-300"
             >
               {item.label}
 
@@ -173,7 +179,7 @@ export default function Header({
               className={`flex items-center gap-1 py-2 text-sm transition-colors hover:text-violet-300 ${
                 selectedCategory !== "Todas"
                   ? "text-violet-300"
-                  : "text-zinc-400"
+                  : "text-muted"
               }`}
             >
               Categorias
@@ -187,17 +193,17 @@ export default function Header({
             </button>
 
             <div
-              className={`absolute left-1/2 top-full z-50 mt-4 w-72 -translate-x-1/2 rounded-2xl border border-white/10 bg-[#101117] p-2 shadow-2xl shadow-black/40 transition-all duration-200 ${
+              className={`absolute left-1/2 top-full z-50 mt-4 w-72 -translate-x-1/2 rounded-2xl border border-fg/10 bg-surface p-2 shadow-2xl shadow-black/40 transition-all duration-200 ${
                 categoriesOpen
                   ? "visible translate-y-0 opacity-100"
                   : "invisible -translate-y-2 opacity-0"
               }`}
             >
               <div className="px-3 pb-2 pt-3">
-                <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+                <p className="text-xs font-semibold uppercase tracking-widest text-subtle">
                   Filtrar por categoria
                 </p>
-                <p className="mt-1 text-xs text-zinc-600">
+                <p className="mt-1 text-xs text-subtle">
                   Escolha o que deseja explorar.
                 </p>
               </div>
@@ -215,7 +221,7 @@ export default function Header({
                       className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm transition-colors ${
                         isSelected
                           ? "bg-violet-600/15 text-violet-300"
-                          : "text-zinc-300 hover:bg-white/5 hover:text-white"
+                          : "text-fg/80 hover:bg-fg/5 hover:text-fg"
                       }`}
                     >
                       <span>{category}</span>
@@ -228,8 +234,8 @@ export default function Header({
                 })}
               </div>
 
-              <div className="mt-2 border-t border-white/10 px-3 py-3">
-                <p className="text-xs text-zinc-500">
+              <div className="mt-2 border-t border-fg/10 px-3 py-3">
+                <p className="text-xs text-subtle">
                   {categories.length}{" "}
                   {categories.length === 1
                     ? "categoria disponível"
@@ -245,16 +251,16 @@ export default function Header({
           {/* Busca desktop */}
           <form
             onSubmit={handleSearch}
-            className="hidden w-52 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 transition-all focus-within:border-violet-500/60 focus-within:bg-white/[0.07] lg:flex xl:w-64"
+            className="hidden w-52 items-center gap-2 rounded-full border border-fg/10 bg-fg/[0.04] px-3 transition-all focus-within:border-violet-500/60 focus-within:bg-fg/[0.07] lg:flex xl:w-64"
           >
-            <Search size={18} className="shrink-0 text-zinc-500" />
+            <Search size={18} className="shrink-0 text-subtle" />
 
             <input
               name="q"
               type="search"
               placeholder="Buscar produtos..."
               aria-label="Buscar produtos"
-              className="w-full min-w-0 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-zinc-500"
+              className="w-full min-w-0 bg-transparent py-2.5 text-sm text-fg outline-none placeholder:text-subtle"
             />
 
             <button
@@ -275,7 +281,7 @@ export default function Header({
             }}
             aria-label={searchOpen ? "Fechar busca" : "Abrir busca"}
             aria-expanded={searchOpen}
-            className="rounded-full p-2 text-zinc-400 transition hover:bg-white/10 hover:text-white lg:hidden"
+            className="rounded-full p-2 text-muted transition hover:bg-fg/10 hover:text-fg lg:hidden"
           >
             {searchOpen ? <X size={20} /> : <Search size={20} />}
           </button>
@@ -294,7 +300,7 @@ export default function Header({
                 ? "Ativar modo claro"
                 : "Ativar modo escuro"
             }
-            className="hidden rounded-full p-2 text-zinc-400 transition hover:bg-white/10 hover:text-white sm:block"
+            className="hidden rounded-full p-2 text-muted transition hover:bg-fg/10 hover:text-fg sm:block"
           >
             {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
           </button>
@@ -302,11 +308,24 @@ export default function Header({
           {/* Favoritos */}
           <button
             type="button"
-            onClick={() => console.log("Abrir favoritos")}
-            aria-label="Favoritos"
-            className="hidden rounded-full p-2 text-zinc-400 transition hover:bg-white/10 hover:text-violet-300 sm:block"
+            onClick={() => {
+              onShowFavorites();
+              setMenuOpen(false);
+              setSearchOpen(false);
+            }}
+            aria-label={`Favoritos (${favoritesCount})`}
+            aria-pressed={showFavorites}
+            className={`relative rounded-full p-2 transition hover:bg-fg/10 hover:text-violet-300 ${
+              showFavorites ? "text-violet-300" : "text-muted"
+            }`}
           >
-            <Heart size={21} />
+            <Heart size={21} className={showFavorites ? "fill-current" : ""} />
+
+            {favoritesCount > 0 && (
+              <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-violet-500 px-1 text-[10px] font-bold text-white">
+                {favoritesCount}
+              </span>
+            )}
           </button>
 
           {/* Menu mobile */}
@@ -318,7 +337,7 @@ export default function Header({
             }}
             aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
             aria-expanded={menuOpen}
-            className="rounded-full p-2 text-zinc-400 transition hover:bg-white/10 hover:text-white lg:hidden"
+            className="rounded-full p-2 text-muted transition hover:bg-fg/10 hover:text-fg lg:hidden"
           >
             {menuOpen ? <X size={21} /> : <Menu size={21} />}
           </button>
@@ -334,16 +353,16 @@ export default function Header({
         <div className="min-h-0">
           <form
             onSubmit={handleSearch}
-            className="flex items-center gap-3 border-t border-white/10 px-5 py-4"
+            className="flex items-center gap-3 border-t border-fg/10 px-5 py-4"
           >
-            <Search size={19} className="shrink-0 text-zinc-500" />
+            <Search size={19} className="shrink-0 text-subtle" />
 
             <input
               name="q"
               type="search"
               placeholder="O que você está procurando?"
               aria-label="Buscar produtos"
-              className="min-w-0 flex-1 bg-transparent py-2 text-sm text-white outline-none placeholder:text-zinc-500"
+              className="min-w-0 flex-1 bg-transparent py-2 text-sm text-fg outline-none placeholder:text-subtle"
             />
 
             <button
@@ -363,7 +382,7 @@ export default function Header({
           menuOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         }`}
       >
-        <nav className="min-h-0 overflow-y-auto border-t border-white/10 px-5 py-3">
+        <nav className="min-h-0 overflow-y-auto border-t border-fg/10 px-5 py-3">
           <div className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -373,7 +392,7 @@ export default function Header({
                   key={item.page}
                   type="button"
                   onClick={() => navigateTo(item.page)}
-                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm text-zinc-300 transition hover:bg-white/5 hover:text-violet-300"
+                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm text-fg/80 transition hover:bg-fg/5 hover:text-violet-300"
                 >
                   <Icon size={17} />
                   {item.label}
@@ -389,10 +408,10 @@ export default function Header({
                   setMobileCategoriesOpen((open) => !open)
                 }
                 aria-expanded={mobileCategoriesOpen}
-                className={`flex w-full items-center justify-between rounded-lg px-4 py-3 text-left text-sm transition hover:bg-white/5 ${
+                className={`flex w-full items-center justify-between rounded-lg px-4 py-3 text-left text-sm transition hover:bg-fg/5 ${
                   selectedCategory !== "Todas"
                     ? "text-violet-300"
-                    : "text-zinc-300"
+                    : "text-fg/80"
                 }`}
               >
                 <span className="flex items-center gap-2">
@@ -421,7 +440,7 @@ export default function Header({
                 }`}
               >
                 <div className="min-h-0 overflow-hidden">
-                  <div className="ml-3 space-y-1 border-l border-white/10 py-2 pl-3">
+                  <div className="ml-3 space-y-1 border-l border-fg/10 py-2 pl-3">
                     {categoryOptions.map((category) => {
                       const isSelected = selectedCategory === category;
 
@@ -434,7 +453,7 @@ export default function Header({
                           className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition ${
                             isSelected
                               ? "bg-violet-600/15 text-violet-300"
-                              : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                              : "text-muted hover:bg-fg/5 hover:text-fg"
                           }`}
                         >
                           <span>{category}</span>

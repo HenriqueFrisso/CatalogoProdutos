@@ -1,5 +1,4 @@
 
-import { useState, type FormEvent } from "react";
 import {
   ArrowUpRight,
   ArrowRight,
@@ -7,12 +6,9 @@ import {
   Camera,
   BriefcaseBusiness,
   PlayCircle,
-  Mail,
-  CheckCircle2,
-  AlertCircle,
 } from "lucide-react";
 
-type Page = "inicio" | "sobre" | "contato";
+import type { Page } from "./Header";
 
 interface FooterProps {
   categories: string[];
@@ -54,11 +50,6 @@ export default function Footer({
   onNavigate,
   onSelectCategory,
 }: FooterProps) {
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<"success" | "error" | "info">(
-    "info"
-  );
 
   function handleNavigate(page: Page) {
     onNavigate(page);
@@ -77,30 +68,11 @@ export default function Footer({
     }, 150);
   }
 
-  function handleSubscribe(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const normalizedEmail = email.trim();
-
-    if (!normalizedEmail) {
-      setMessageType("error");
-      setMessage("Informe um endereço de e-mail válido.");
-      return;
-    }
-
-    // A inscrição real depende de uma API ou serviço de newsletter.
-    // Não informamos que o usuário foi inscrito sem confirmar isso no servidor.
-    setMessageType("info");
-    setMessage(
-      "A newsletter ainda não está conectada a um serviço de inscrição. Nenhum cadastro foi realizado."
-    );
-  }
-
   return (
-    <footer className="border-t border-white/10 bg-[#090a10] text-zinc-300">
+    <footer className="border-t border-fg/10 bg-page text-fg/80">
       <div className="mx-auto max-w-[1440px] px-5 pb-6 pt-14 md:px-10 md:pt-20">
         {/* Colunas */}
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.75fr_0.9fr_1.3fr] lg:gap-12">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr] lg:gap-12">
           {/* Marca */}
           <div>
             <button
@@ -113,12 +85,12 @@ export default function Footer({
                 C
               </span>
 
-              <span className="text-xl font-bold tracking-tight text-white">
+              <span className="text-xl font-bold tracking-tight text-fg">
                 Catálogo<span className="text-violet-400">.</span>
               </span>
             </button>
 
-            <p className="mt-5 max-w-sm text-sm leading-7 text-zinc-400">
+            <p className="mt-5 max-w-sm text-sm leading-7 text-muted">
               Descubra novas possibilidades em um só lugar. Explore coleções,
               encontre seus favoritos e conheça tudo o que preparamos para você.
             </p>
@@ -131,7 +103,7 @@ export default function Footer({
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-zinc-400 transition duration-300 hover:-translate-y-1 hover:border-violet-400/40 hover:bg-violet-500/10 hover:text-violet-300"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-fg/10 bg-fg/[0.04] text-muted transition duration-300 hover:-translate-y-1 hover:border-violet-400/40 hover:bg-violet-500/10 hover:text-violet-300"
                 >
                   <Icon size={18} />
                 </a>
@@ -140,8 +112,8 @@ export default function Footer({
           </div>
 
           {/* Navegação */}
-          <div className="lg:border-l lg:border-white/10 lg:pl-8">
-            <h2 className="text-sm font-semibold text-white">Navegação</h2>
+          <div className="lg:border-l lg:border-fg/10 lg:pl-8">
+            <h2 className="text-sm font-semibold text-fg">Navegação</h2>
 
             <ul className="mt-5 space-y-4">
               {navigation.map((item) => (
@@ -149,7 +121,7 @@ export default function Footer({
                   <button
                     type="button"
                     onClick={() => handleNavigate(item.page)}
-                    className="group flex w-full items-center justify-between gap-2 text-left text-sm text-zinc-400 transition hover:text-violet-300"
+                    className="group flex w-full items-center justify-between gap-2 text-left text-sm text-muted transition hover:text-violet-300"
                   >
                     {item.label}
 
@@ -164,15 +136,15 @@ export default function Footer({
           </div>
 
           {/* Categorias dinâmicas */}
-          <div className="lg:border-l lg:border-white/10 lg:pl-8">
-            <h2 className="text-sm font-semibold text-white">Categorias</h2>
+          <div className="lg:border-l lg:border-fg/10 lg:pl-8">
+            <h2 className="text-sm font-semibold text-fg">Categorias</h2>
 
             <ul className="mt-5 space-y-4">
               <li>
                 <button
                   type="button"
                   onClick={() => handleCategoryClick("Todas")}
-                  className="group flex w-full items-center justify-between gap-2 text-left text-sm text-zinc-400 transition hover:text-violet-300"
+                  className="group flex w-full items-center justify-between gap-2 text-left text-sm text-muted transition hover:text-violet-300"
                 >
                   Todas as categorias
                   <ArrowRight
@@ -187,7 +159,7 @@ export default function Footer({
                   <button
                     type="button"
                     onClick={() => handleCategoryClick(category)}
-                    className="group flex w-full items-center justify-between gap-2 text-left text-sm text-zinc-400 transition hover:text-violet-300"
+                    className="group flex w-full items-center justify-between gap-2 text-left text-sm text-muted transition hover:text-violet-300"
                   >
                     <span className="truncate">{category}</span>
 
@@ -200,85 +172,10 @@ export default function Footer({
               ))}
             </ul>
           </div>
-
-          {/* Newsletter */}
-          <div className="lg:border-l lg:border-white/10 lg:pl-8">
-            <h2 className="text-sm font-semibold text-white">
-              Receba novidades
-            </h2>
-
-            <p className="mt-5 text-sm leading-7 text-zinc-400">
-              Cadastre seu e-mail para receber novidades e lançamentos quando
-              a newsletter estiver disponível.
-            </p>
-
-            <form onSubmit={handleSubscribe} className="mt-5">
-              <label htmlFor="newsletter-email" className="sr-only">
-                Seu e-mail
-              </label>
-
-              <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] p-1.5 pl-4 transition focus-within:border-violet-400/60">
-                <Mail size={18} className="shrink-0 text-zinc-500" />
-
-                <input
-                  id="newsletter-email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  maxLength={254}
-                  value={email}
-                  onChange={(event) => {
-                    setEmail(event.target.value);
-                    setMessage("");
-                  }}
-                  placeholder="Seu e-mail"
-                  className="min-w-0 flex-1 bg-transparent py-2 text-sm text-white outline-none placeholder:text-zinc-500"
-                />
-
-                <button
-                  type="submit"
-                  className="shrink-0 rounded-full bg-violet-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-violet-500"
-                >
-                  Inscrever
-                </button>
-              </div>
-
-              {message && (
-                <div
-                  role="status"
-                  className={`mt-3 flex items-start gap-2 text-xs leading-5 ${
-                    messageType === "error"
-                      ? "text-red-400"
-                      : messageType === "success"
-                        ? "text-emerald-400"
-                        : "text-violet-300"
-                  }`}
-                >
-                  {messageType === "success" ? (
-                    <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
-                  ) : (
-                    <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                  )}
-
-                  <p>{message}</p>
-                </div>
-              )}
-            </form>
-
-            <button
-              type="button"
-              onClick={() => handleNavigate("contato")}
-              className="mt-5 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-violet-300"
-            >
-              Precisa de ajuda? Fale conosco
-              <ArrowUpRight size={15} />
-            </button>
-          </div>
         </div>
 
         {/* Rodapé inferior */}
-        <div className="mt-14 flex flex-col gap-5 border-t border-white/10 pt-6 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-14 flex flex-col gap-5 border-t border-fg/10 pt-6 text-xs text-subtle sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} Catálogo. Todos os direitos reservados.
           </p>

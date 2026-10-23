@@ -12,14 +12,17 @@ interface ProductModalProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
+  isFavorite: boolean;
+  onToggleFavorite: (product: Product) => void;
 }
 
 export default function ProductModal({
   product,
   isOpen,
   onClose,
+  isFavorite,
+  onToggleFavorite,
 }: ProductModalProps) {
-  const [isFavorite, setIsFavorite] = useState(false);
   const [failedImage, setFailedImage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -87,11 +90,11 @@ export default function ProductModal({
             role="dialog"
             aria-modal="true"
             aria-label={product.name}
-            className="relative my-auto flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#12131c] text-white shadow-2xl shadow-black/60 md:flex-row"
+            className="relative my-auto flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-fg/10 bg-surface text-fg shadow-2xl shadow-black/60 md:flex-row"
             onClick={(event) => event.stopPropagation()}
           >
             {/* Image */}
-            <div className="relative flex aspect-[5/4] shrink-0 items-center justify-center overflow-hidden bg-white/[0.03] sm:aspect-video md:aspect-auto md:w-1/2">
+            <div className="relative flex aspect-[5/4] shrink-0 items-center justify-center overflow-hidden bg-fg/[0.03] sm:aspect-video md:aspect-auto md:w-1/2">
               {!imageError ? (
                 <img
                   src={product.image}
@@ -100,7 +103,7 @@ export default function ProductModal({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center gap-3 p-8 text-center text-zinc-500">
+                <div className="flex flex-col items-center justify-center gap-3 p-8 text-center text-subtle">
                   <ImageOff size={48} strokeWidth={1.2} />
                   <span className="text-sm">
                     Imagem indisponível
@@ -128,9 +131,7 @@ export default function ProductModal({
                   {/* Favorite */}
                   <button
                     type="button"
-                    onClick={() =>
-                      setIsFavorite((previous) => !previous)
-                    }
+                    onClick={() => onToggleFavorite(product)}
                     aria-label={
                       isFavorite
                         ? "Remover dos favoritos"
@@ -145,7 +146,7 @@ export default function ProductModal({
                     className={`flex h-10 w-10 items-center justify-center rounded-full border transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 ${
                       isFavorite
                         ? "border-violet-500 bg-violet-600 text-white"
-                        : "border-white/10 bg-white/[0.05] text-zinc-300 hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-violet-300"
+                        : "border-fg/10 bg-fg/[0.05] text-fg/80 hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-violet-300"
                     }`}
                   >
                     <Heart
@@ -162,7 +163,7 @@ export default function ProductModal({
                     onClick={onClose}
                     aria-label="Fechar detalhes do produto"
                     title="Fechar"
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-zinc-300 transition duration-200 hover:border-red-400/40 hover:bg-red-500/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-fg/10 bg-fg/[0.05] text-fg/80 transition duration-200 hover:border-red-400/40 hover:bg-red-500/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
                   >
                     <X size={20} />
                   </button>
@@ -187,7 +188,7 @@ export default function ProductModal({
                     </span>
                   </div>
 
-                  <span className="text-xs text-zinc-500">
+                  <span className="text-xs text-subtle">
                     Avaliações verificadas
                   </span>
                 </div>
@@ -202,14 +203,14 @@ export default function ProductModal({
                 {oldPrice &&
                   product.oldPrice !== undefined &&
                   product.oldPrice > product.price && (
-                    <span className="text-base text-zinc-500 line-through">
+                    <span className="text-base text-subtle line-through">
                       {oldPrice}
                     </span>
                   )}
               </div>
 
               {/* Description */}
-              <p className="mt-4 text-sm leading-relaxed text-zinc-300">
+              <p className="mt-4 text-sm leading-relaxed text-fg/80">
                 Produto de alta qualidade selecionado especialmente
                 para você, com excelente acabamento.
               </p>
